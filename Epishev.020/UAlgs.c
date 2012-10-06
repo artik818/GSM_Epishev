@@ -898,7 +898,7 @@ char MainAlg(void) {
 	char RetVal = 0;
 	long int currentBaudRate;
 	//char commandBaudRate[100];
-	//char baudRateStr[100];
+	char baudRateStr[100];
 	
 	// мы хотим Call Ready ловить в любом месте, а не только после инициализационных команд!
 	if (!flCallReady) {
@@ -926,9 +926,12 @@ char MainAlg(void) {
 			
 			currentBaudRate = baudRates[baudIndex];
 			USART0_Int_Init(BAUD(currentBaudRate));
+			sprintf(baudRateStr, "%ld", currentBaudRate);
+			strcat(baudRateStr, "\r\n");
+			PutPC(baudRateStr);
 			baudIndex++;
 			
-			MarkDelay(TMainAlg, &swMainAlg, cswModemConnectionSpeed01);
+			MarkDelay(&TMainAlg, &swMainAlg, cswModemConnectionSpeed01);
 		break;
 		
 		case cswModemConnectionSpeed01:
