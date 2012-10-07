@@ -227,10 +227,18 @@ char ReadSettings(void) {
 			CellNumber = cSettings;
 		break;
 		case csw010: // ждем ответа от модема
-			if (WaitAnswer(TPrevReadSettings, "OK", 2000, &swReadSettings, csw020, cswNOK) == 4) {
+			if (WaitAnswer(TPrevReadSettings, "OK", 2000, &swReadSettings, cswMarkDelay01, cswNOK) == 4) {
 				ErrorReadSettings = 3; // таймаут выбора телефонной книги сим карты
 				RetVal = ErrorReadSettings;
 			}
+		break;
+		
+		// задержимся после одупления телефонной книги начуток
+		case cswMarkDelay01:
+			MarkDelay(&TPrevReadSettings, &swReadSettings, cswWaitDelay01);
+		break;
+		case cswWaitDelay01:
+			WaitDelayAndGoTo(TPrevReadSettings, 1000, &swReadSettings, csw020);
 		break;
 		
 		//----------------- чтение очередного номера из записной книжки --------------------------
@@ -891,6 +899,7 @@ char Work(void) {
 TTime TMainAlg;
 int swMainAlg = cswIdle;
 char BadCount = 0;
+char waitReadyBadCount = 0;
 char flCallReady = 0;
 int baudIndex = 0;
 char MainAlg(void) {
@@ -899,7 +908,7 @@ char MainAlg(void) {
 	long int currentBaudRate;
 	//char commandBaudRate[100];
 	char baudRateStr[100];
-	
+	/*
 	// мы хотим Call Ready ловить в любом месте, а не только после инициализационных команд!
 	if (!flCallReady) {
 		if (flIsReaded != 0) {
@@ -907,7 +916,7 @@ char MainAlg(void) {
 				flCallReady = 1;
 			}
 		}
-	}
+	}*/
 	
 	switch (swMainAlg) {
 		case cswIdle:
@@ -964,6 +973,7 @@ char MainAlg(void) {
 		
 		//------------ ----------------------------------------------------------
 		//------------ Ждем готовности модема -------------------------------
+		/*
 		case cswWaitReady:
 			TMainAlg = GetTime();
 			swMainAlg = csw010;
@@ -986,8 +996,27 @@ char MainAlg(void) {
 		case cswERRORWaitReady:
 			TMainAlg = GetTime();
 			BadCount++;
-			if (BadCount >= 3) RetVal = 100;
+			if (BadCount >= 3) 
+				RetVal = 100;
 			swMainAlg = csw010;
+		break;
+		*/
+		case cswWaitReady:
+			DoCommand(&TMainAlg, "at+creg?\r\n", &swMainAlg, csw010);
+			swIndik = cswWaitReady;
+		break;
+		case csw010:
+			if (WaitAnswer(TMainAlg, "+CREG: 1,1", 2000, &swMainAlg, cswOKWaitReady, cswWaitReady)) {
+				waitReadyBadCount++;
+			}
+			
+			if (waitReadyBadCount > 5) {
+				swMainAlg = cswERRORWaitReady;
+				swIndik = cswERRORWaitReady;
+			}
+		break;
+		case cswERRORWaitReady:
+			RetVal = 100;
 		break;
 		case cswOKWaitReady:
 			swMainAlg = cswReadSettings;
@@ -1007,6 +1036,7 @@ char MainAlg(void) {
 			if ((tmpRet!=0) && (swReadSettings==cswNOK)) { // ошибка сработки
 				swReadSettings=cswIdle;
 				swMainAlg = cswWriteSettings;
+				PutPC("cswWriteSettings\r\n");
 			}
 			if ((tmpRet==0) && (swReadSettings==cswOK)) { // отработала нормально
 				swReadSettings=cswIdle;
