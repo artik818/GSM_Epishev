@@ -58,8 +58,15 @@ enum {
 	cswCantConnectBill,	// нет возможности связаться с сервером для получения остатка
 	cswLittleMoney,		// остаток на счете меньше дозволенной границы
 	
+	cswMarkDelay00,
+	cswWaitDelay00,
+	cswDoneDelay00,
 	cswMarkDelay01,
 	cswWaitDelay01,
+	cswDoneDelay01,
+	cswMarkDelay02,
+	cswWaitDelay02,
+	cswDoneDelay02,
 	
 	csw005, // 
 	csw010, // 

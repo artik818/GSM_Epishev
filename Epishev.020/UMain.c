@@ -39,7 +39,7 @@ FromModemBufLen = 0;
 
 	// включение модема
 	ModemOnOff();
-	MDelay(1000);
+	MDelay(3000);
 	
 	sei();
 	

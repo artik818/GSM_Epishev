@@ -428,7 +428,14 @@ char SendSMS() {
 
 		case cswStart:
 			CellNumber = cNumber01;
-			swSMS = csw010;
+			swSMS = cswMarkDelay00;
+		break;
+		
+		case cswMarkDelay00:
+			MarkDelay(&TPrevSendSMS, &swSMS, cswWaitDelay00);
+		break;
+		case cswWaitDelay00:
+			WaitDelayAndGoTo(TPrevSendSMS, 3000, &swSMS, csw010);
 		break;
 		
 		case csw010:
@@ -447,11 +454,27 @@ char SendSMS() {
 				strncpy(cmdSendSMS, "at+cmgs=\"", MAX_BUF-1);
 				strncat(cmdSendSMS, PhoneNumber[CellNumber-cSettings].Number, MAX_BUF-1);
 				strncat(cmdSendSMS, "\"\r\n", MAX_BUF-1);
-				//strncat(cmdSendSMS, Text, MAX_BUF-1);
-				strncat(cmdSendSMS, SMSToSendAlg.SMSText, MAX_BUF-1);
-				strncat(cmdSendSMS, "\x1A", MAX_BUF-1); // 26 = конец файла = ^Z
-				DoCommand(&TPrevSendSMS, cmdSendSMS, &swSMS, csw020);
+				DoCommand(&TPrevSendSMS, cmdSendSMS, &swSMS, cswWaitDelay01);
 			}
+		break;
+		/*case cswMarkDelay01:
+			MarkDelay(&TPrevSendSMS, &swSMS, cswWaitDelay01);
+		break;*/
+		case cswWaitDelay01:
+			//WaitDelayAndGoTo(TPrevSendSMS, 1000, &swSMS, cswDoneDelay01);
+			WaitDelayAndGoTo(TPrevSendSMS, 1000, &swSMS, cswDoneDelay02);
+		break;
+		case cswDoneDelay01:
+			strncpy(cmdSendSMS, "\r\n", MAX_BUF-1);
+			DoCommand(&TPrevSendSMS, cmdSendSMS, &swSMS, cswWaitDelay02);
+		break;
+		case cswWaitDelay02:
+			WaitDelayAndGoTo(TPrevSendSMS, 3000, &swSMS, cswDoneDelay02);
+		break;
+		case cswDoneDelay02:
+			strncpy(cmdSendSMS, SMSToSendAlg.SMSText, MAX_BUF-1);
+			strncat(cmdSendSMS, "\x1A", MAX_BUF-1); // 26 = конец файла = ^Z
+			DoCommand(&TPrevSendSMS, cmdSendSMS, &swSMS, csw020);
 		break;
 		case csw020: // просто ждем "+CMGS:"
 			WaitAnswer(TPrevSendSMS, "+CMGS:", 15000, &swSMS, csw030, csw030);
@@ -1010,7 +1033,7 @@ char MainAlg(void) {
 				waitReadyBadCount++;
 			}
 			
-			if (waitReadyBadCount > 5) {
+			if (waitReadyBadCount > 8) {
 				swMainAlg = cswERRORWaitReady;
 				swIndik = cswERRORWaitReady;
 			}
